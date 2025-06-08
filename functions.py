@@ -15,33 +15,33 @@ connection = sqlite3.connect("event_data.db")
 cursor = connection.cursor()
 
 
-def get_html_code(url) -> str:
-    """ Request a source code from the webpage url. """
-    web_code = requests.get(url, headers=HEADERS)
-    return web_code.text
+class Event:
+    def get_html_code(self, url) -> str:
+        """ Request a source code from the webpage url. """
+        web_code = requests.get(url, headers=HEADERS)
+        return web_code.text
+
+    def extract_data(self, web_code, yaml_file="extract_data.yaml", search="tours") -> str:
+        """ Extract important data from web programmer100.pythonanywhere.com. """
+        extractor = Extractor.from_yaml_file(yaml_file)
+        data = extractor.extract(web_code)[search]
+        return data
+
+    def extract_data_db(self, table):
+        cursor.execute(f"SELECT * FROM {table}")
+        rows = cursor.fetchall()
+        return rows
 
 
-def extract_data(web_code, yaml_file="extract_data.yaml", search="tours") -> str:
-    """ Extract important data from web programmer100.pythonanywhere.com. """
-    extractor = Extractor.from_yaml_file(yaml_file)
-    data = extractor.extract(web_code)[search]
-    return data
+class Email:
+    def send(self, message) -> None:
+        """ Send e-mail via SMTP protocol with gmail server. """
+        with smtplib.SMTP_SSL(host="smtp.gmail.com", port=465) as server:
+            email_message = f"Subject: New music event has appeared!\n\n{message}"
+            server.login(EMAIL_SENDER, EMAIL_PASSWD)
+            server.sendmail(from_addr=EMAIL_SENDER, to_addrs=EMAIL_RECEIVER, msg=email_message)
 
-
-def extract_data_db(table):
-    cursor.execute(f"SELECT * FROM {table}")
-    rows = cursor.fetchall()
-    return rows
-
-
-def send_email(message) -> None:
-    """ Send e-mail via SMTP protocol with gmail server. """
-    with smtplib.SMTP_SSL(host="smtp.gmail.com", port=465) as server:
-        email_message = f"Subject: New music event has appeared!\n\n{message}"
-        server.login(EMAIL_SENDER, EMAIL_PASSWD)
-        server.sendmail(from_addr=EMAIL_SENDER, to_addrs=EMAIL_RECEIVER, msg=email_message)
-
-    print("E-mail with new music event was sent.")
+        print("E-mail with new music event was sent.")
 
 
 def store_data(new_data, store_file="music_event_data.txt") -> None:
